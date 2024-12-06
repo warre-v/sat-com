@@ -1,12 +1,14 @@
 import serial
 from PIL import Image
 import numpy as np
+import os
 
 # Serial port configuration
 SERIAL_PORT = 'COM3'  # Replace with your Arduino's port (e.g., /dev/ttyUSB0 on Linux/Mac)
 BAUD_RATE = 9600
-OUTPUT_FILE = 'output.bin'
-HEX_OUTPUT_FILE = 'hex_output.txt'
+BASE_DIR = os.path.dirname(__file__)
+OUTPUT_FILE = os.path.join(BASE_DIR, 'bin_images', 'output.bin')
+HEX_OUTPUT_FILE = os.path.join(BASE_DIR, 'hex_output.txt')
 
 def recv_data():
     # Open the serial port
@@ -14,16 +16,18 @@ def recv_data():
     print(f"Listening on {SERIAL_PORT} at {BAUD_RATE} baud")
     
     # Open files to save the binary data and hexadecimal data
-    with open(HEX_OUTPUT_FILE, 'w') as hex_file:
+    with open(HEX_OUTPUT_FILE, 'w') as hex_file, open(OUTPUT_FILE, 'wb') as bin_file:
         try:
             while True:
                 # Read data from the serial port
                 data = ser.read(1024)  # Read up to 1024 bytes
                 if data:
-                    print(f"Received {len(data)} bytes")
+                    print(f"Received {len(data)} bytes: {data}")
                     hex_data = data.hex()
                     hex_file.write(hex_data + '\n')
                     hex_file.flush()
+                    bin_file.write(data)
+                    bin_file.flush()
         except KeyboardInterrupt:
             print("Terminating...")
         finally:
@@ -47,11 +51,11 @@ def hex_to_binary(input_file, output_file):
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-def bin_to_img() :
+def bin_to_img():
     # Path to the binary file
-    binary_file_path = 'C:\\Users\\Salma\\OneDrive\\Desktop\\serial_recv_bin_reconstruction\\output.bin'
+    binary_file_path = OUTPUT_FILE
     # Path to save the reconstructed image
-    output_image_path = 'C:\\Users\\Salma\\OneDrive\\Desktop\\serial_recv_bin_reconstruction\\reconstructed_image.jpg'
+    output_image_path = IMAGE_FILE
 
     # Dimensions of the original image (update to match your original image dimensions)
     image_width = 96  # Example width
@@ -60,6 +64,8 @@ def bin_to_img() :
     # Read the binary file
     with open(binary_file_path, 'rb') as bin_file:
         binary_data = bin_file.read()
+
+    print(f"Binary data length: {len(binary_data)}")
 
     # Convert binary data to NumPy array
     binarr = np.frombuffer(binary_data, dtype=np.uint8)
