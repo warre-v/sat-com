@@ -4,6 +4,7 @@ let reader;
 let receivedData = [];
 let collectingData = false;
 let partialData = '';
+let collectedData = ''; // Add this variable to store incoming data
 
 document.getElementById('OpenConnectionButton').addEventListener('click', async (event) => {
     event.preventDefault();
@@ -34,6 +35,10 @@ document.getElementById('CloseConnectionButton').addEventListener('click', async
     await closeSerialConnection();
 });
 
+document.getElementById('DownloadDataButton').addEventListener('click', () => {
+    downloadData();
+});
+
 async function openSerialConnection() {
     try {
         console.log('Requesting serial port...');
@@ -54,6 +59,9 @@ async function openSerialConnection() {
 
         console.log('Serial connection established.');
         document.getElementById('status').textContent = 'Status: Connected';
+
+        // Start listening for incoming data
+        listenToPort(reader);
 
         // Add a short delay to ensure the connection is fully established
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -113,101 +121,36 @@ async function sendData(data) {
     }
 }
 
-async function listenForData() {
+async function listenToPort(reader) {
     try {
-        console.log('Listening for data...');
-        let buffer = []; // Accumulates incoming bytes
-        const startMarker = new TextEncoder().encode('#IMGS'); // Start marker bytes
-        const endMarker = new TextEncoder().encode('#IMGE');   // End marker bytes
-        let collectingData = false;
-
         while (true) {
             const { value, done } = await reader.read();
             if (done) {
-                console.log('Stream closed');
+                // Reader has been canceled.
                 break;
             }
-
             if (value) {
-                // Append incoming bytes to buffer
-                buffer.push(...value);
-
-                // Convert buffer to Uint8Array for searching
-                const bufferArray = new Uint8Array(buffer);
-
-                if (!collectingData) {
-                    // Search for start marker
-                    const startIndex = indexOfSubarray(bufferArray, startMarker);
-                    if (startIndex !== -1) {
-                        console.log('Start marker found');
-                        collectingData = true;
-                        // Remove data before the start marker
-                        buffer = buffer.slice(startIndex + startMarker.length);
-                    } else {
-                        // Keep buffer from growing indefinitely
-                        if (buffer.length > startMarker.length) {
-                            buffer = buffer.slice(-startMarker.length);
-                        }
-                        continue; // Wait for start marker
-                    }
-                }
-
-                if (collectingData) {
-                    // Search for end marker
-                    const bufferArray = new Uint8Array(buffer);
-                    const endIndex = indexOfSubarray(bufferArray, endMarker);
-                    if (endIndex !== -1) {
-                        console.log('End marker found');
-                        // Extract data up to end marker
-                        const imageData = buffer.slice(0, endIndex);
-                        console.log(`Collected ${imageData.length} bytes`);
-
-                        // Send collected data to the server
-                        await sendDataToPython(new Uint8Array(imageData));
-
-                        // Reset flags and buffers
-                        collectingData = false;
-                        buffer = [];
-                        break; // Exit loop if only expecting one image
-                    }
-                }
+                const textDecoder = new TextDecoder();
+                const data = textDecoder.decode(value);
+                console.log('Received data:', data);
+                collectedData += data; // Append data to the collectedData variable
             }
         }
-    } catch (err) {
-        console.error('Failed to read data:', err);
+    } catch (error) {
+        console.error('Error reading from port:', error);
+    } finally {
+        reader.releaseLock();
     }
 }
 
-// Helper function to find a subarray within an array
-function indexOfSubarray(haystack, needle) {
-    for (let i = 0; i <= haystack.length - needle.length; i++) {
-        let found = true;
-        for (let j = 0; j < needle.length; j++) {
-            if (haystack[i + j] !== needle[j]) {
-                found = false;
-                break;
-            }
-        }
-        if (found) return i;
-    }
-    return -1;
+function downloadData() {
+    const blob = new Blob([collectedData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'received_data.txt';
+    link.click();
+    URL.revokeObjectURL(url);
 }
 
-async function sendDataToPython(data) {
-    try {
-        console.log('Sending data to Python script...');
-        console.log('Data length:', data.length);
-        const response = await fetch('http://localhost:5000/upload', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/octet-stream'
-            },
-            body: data
-        });
-        const result = await response.json();
-        console.log('Data processed by Python script:', result);
-    } catch (err) {
-        console.error('Failed to send data to Python script:', err);
-    }
-}
 
