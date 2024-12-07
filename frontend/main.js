@@ -4,25 +4,20 @@ let reader;
 let receivedData = [];
 let collectingData = false;
 let partialData = '';
-let collectedData = ''; // Add this variable to store incoming data
+let isCollectingImage = false;
+let imageData = '';
+let buffer = ''; // Buffer to store incoming data
 
 document.getElementById('OpenConnectionButton').addEventListener('click', async (event) => {
     event.preventDefault();
-    console.log('Open Connection button clicked');
     await openSerialConnection();
 });
 
 document.getElementById('TakeImageButton').addEventListener('click', async (event) => {
     event.preventDefault();
-    console.log('Take Image button clicked');
 
-    // Ensure the writer is ready before sending data
     if (writer) {
-        console.log('Writer is ready. Sending data...');
-        // Send data
         await sendData('#TIMG');
-        // Start listening for data
-        await listenForData();
     } else {
         console.error('Writer is not initialized. Unable to send data.');
         document.getElementById('status').textContent = 'Status: Writer not initialized';
@@ -31,7 +26,6 @@ document.getElementById('TakeImageButton').addEventListener('click', async (even
 
 document.getElementById('CloseConnectionButton').addEventListener('click', async (event) => {
     event.preventDefault();
-    console.log('Close Connection button clicked');
     await closeSerialConnection();
 });
 
@@ -41,21 +35,10 @@ document.getElementById('DownloadDataButton').addEventListener('click', () => {
 
 async function openSerialConnection() {
     try {
-        console.log('Requesting serial port...');
         port = await navigator.serial.requestPort();
-        console.log('Serial port selected.');
-
-        console.log('Opening serial port...');
         await port.open({ baudRate: 9600 }); // Adjust baud rate as needed
-        console.log('Serial port opened.');
-
-        console.log('Setting up writer...');
         writer = port.writable.getWriter();
-        console.log('Writer set up.');
-
-        console.log('Setting up reader...');
         reader = port.readable.getReader();
-        console.log('Reader set up.');
 
         console.log('Serial connection established.');
         document.getElementById('status').textContent = 'Status: Connected';
@@ -75,7 +58,6 @@ async function openSerialConnection() {
 async function closeSerialConnection() {
     if (port) {
         try {
-            console.log('Closing serial connection...');
             // Release the writer
             if (writer) {
                 await writer.close();
@@ -104,12 +86,8 @@ async function closeSerialConnection() {
 async function sendData(data) {
     if (writer) {
         try {
-            console.log('Encoding data...');
             const textEncoder = new TextEncoder();
             const encodedData = textEncoder.encode(data + '\n');
-            console.log('Data encoded:', encodedData);
-
-            console.log('Writing data to serial port...');
             await writer.write(encodedData);
             console.log(`Data sent: ${data}`);
             document.getElementById('status').textContent = `Status: Sending ${data}`;
@@ -125,15 +103,44 @@ async function listenToPort(reader) {
     try {
         while (true) {
             const { value, done } = await reader.read();
-            if (done) {
-                // Reader has been canceled.
-                break;
-            }
+            if (done) break;
+
             if (value) {
-                const textDecoder = new TextDecoder();
-                const data = textDecoder.decode(value);
-                console.log('Received data:', data);
-                collectedData += data; // Append data to the collectedData variable
+                const data = new TextDecoder().decode(value);
+
+                // Append data to buffer
+                buffer += data;
+
+                // Check for image start marker
+                if (!isCollectingImage && buffer.includes('#IMGS')) {
+                    console.log('Image start marker found');
+                    isCollectingImage = true;
+                    imageData = '';
+                    // Remove everything up to and including '#IMGS' from buffer
+                    buffer = buffer.substring(buffer.indexOf('#IMGS') + 5);
+                }
+
+                // Check for image end marker
+                if (isCollectingImage && buffer.includes('#IMGE')) {
+                    console.log('Image end marker found');
+                    // Extract image data up to '#IMGE'
+                    const imageEndIndex = buffer.indexOf('#IMGE');
+                    imageData += buffer.substring(0, imageEndIndex);
+                    // Remove image data and marker from buffer
+                    buffer = buffer.substring(imageEndIndex + 5);
+                    isCollectingImage = false;
+
+                    // Send collected image data to server
+                    await sendImageToServer(imageData);
+                }
+
+                // Collect image data if in between markers
+                if (isCollectingImage && buffer.length >= 32) {
+                    // Take all data from buffer and add to imageData
+                    console.log('Received:', buffer);
+                    imageData += buffer;
+                    buffer = '';
+                }
             }
         }
     } catch (error) {
@@ -143,14 +150,25 @@ async function listenToPort(reader) {
     }
 }
 
-function downloadData() {
-    const blob = new Blob([collectedData], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'received_data.txt';
-    link.click();
-    URL.revokeObjectURL(url);
-}
+async function sendImageToServer(hexData) {
+    try {
+        // Convert hex string to binary data
+        const bytes = new Uint8Array(hexData.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        
+        const response = await fetch('http://localhost:5000/upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/octet-stream'
+            },
+            body: bytes
+        });
 
+        const result = await response.json();
+        console.log('Server response:', result);
+        document.getElementById('status').textContent = 'Status: Image uploaded to server';
+    } catch (error) {
+        console.error('Error sending image to server:', error);
+        document.getElementById('status').textContent = 'Status: Failed to upload image';
+    }
+}
 

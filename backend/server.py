@@ -44,26 +44,8 @@ def upload_image():
         # Write the binary data to a file
         with open(RECEIVED_IMAGE_FILE, 'wb') as bin_file:
             bin_file.write(image_data)
-
-        # Convert binary data to image
-        try:
-            # Convert the binary data to a numpy array
-            img_array = np.frombuffer(image_data, dtype=np.uint8)
-            
-            # The image should be 96x54 pixels (5184 bytes total)
-            if len(img_array) != 5184:  # 96 * 54
-                return {"error": f"Invalid data length: {len(img_array)}"}, 400
-            
-            # Reshape the array to image dimensions
-            img_array = img_array.reshape((54, 96))
-            
-            # Create and save the image
-            img = Image.fromarray(img_array, mode='L')
-            img.save(IMAGE_FILE)
-            
-            return {"message": "Image saved and converted successfully"}, 200
-        except Exception as e:
-            return {"error": f"Failed to convert image: {str(e)}"}, 500
+        
+        return {"message": "Image data saved successfully"}, 200
 
     except Exception as e:
         return {"error": str(e)}, 500
