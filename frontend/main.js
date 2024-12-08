@@ -24,7 +24,6 @@ document.getElementById('TakeImageButton').addEventListener('click', async (even
         await sendData('#TIMG');
     } else {
         console.error('Writer is not initialized. Unable to send data.');
-        document.getElementById('status').textContent = 'Status: Writer not initialized';
     }
 });
 
@@ -32,7 +31,6 @@ document.getElementById('CloseConnectionButton').addEventListener('click', async
     event.preventDefault();
     await closeSerialConnection();
 });
-
 
 async function openSerialConnection() {
     try {
@@ -42,7 +40,6 @@ async function openSerialConnection() {
         reader = port.readable.getReader();
 
         console.log('Serial connection established.');
-        document.getElementById('status').textContent = 'Status: Connected';
 
         // Start listening for incoming data
         listenToPort(reader);
@@ -52,7 +49,6 @@ async function openSerialConnection() {
 
     } catch (err) {
         console.error('Failed to open serial connection:', err);
-        document.getElementById('status').textContent = 'Status: Failed to Connect';
     }
 }
 
@@ -76,7 +72,6 @@ async function closeSerialConnection() {
             port = null;
 
             console.log('Serial connection closed.');
-            document.getElementById('status').textContent = 'Status: Disconnected';
 
         } catch (err) {
             console.error('Failed to close serial connection:', err);
@@ -91,7 +86,6 @@ async function sendData(data) {
             const encodedData = textEncoder.encode(data + '\n');
             await writer.write(encodedData);
             console.log(`Data sent: ${data}`);
-            document.getElementById('status').textContent = `Status: Sending ${data}`;
         } catch (err) {
             console.error('Failed to send data:', err);
         }
@@ -113,8 +107,8 @@ async function listenToPort(reader) {
                 buffer += data;
 
                 // Limit buffer size to 128 characters
-                if (buffer.length > 128) {
-                    buffer = buffer.slice(-128);
+                if (buffer.length > 2048) {
+                    buffer = buffer.slice(-2048);
                 }
 
                 // Hex representation of markers with extra 00 byte
@@ -174,10 +168,8 @@ async function sendImageToServer(hexData) {
 
         const result = await response.json();
         console.log('Server response:', result);
-        document.getElementById('status').textContent = 'Status: Image uploaded to server';
     } catch (error) {
         console.error('Error sending image to server:', error);
-        document.getElementById('status').textContent = 'Status: Failed to upload image';
     }
 }
 
