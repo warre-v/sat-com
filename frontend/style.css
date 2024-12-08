@@ -62,6 +62,11 @@ button.disconnected {
     background-color: #44bb44;
 }
 
+button.taking {
+    background-color: #ccaa00;
+    cursor: not-allowed;
+}
+
 button:hover {
     background-color: #0056b3;
 }
@@ -80,14 +85,14 @@ button:hover {
 }
 
 .full-width-section {
-    width: 100%;
+    width: auto;
     height : 100%;
-    max-width: 1440px;
     border: 1px solid #ccc;
     border-radius: 8px;
-    margin-top: 40px;
+    margin-top: 20px;
     margin-left: 10px;
     margin-right: 10px;
+    margin-bottom: 20px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
@@ -95,13 +100,23 @@ button:hover {
 }
 
 .image {
-    height: 500px;
-    max-width: 500px;
-    /* Restricts the graph width */
-    background-color: #f4f4f4;
+    width: 100%;
+    min-height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    height: auto;
+    max-width: auto;
+    /* Restricts the graph width */
+    background-color: #f4f4f4;
     color: #666;
     margin-top: 20px;
+}
+
+#capturedImage {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 10px 0;
 }

@@ -15,6 +15,7 @@
             <button type="button" id="OpenConnectionButton" class="disconnected">Open Connection</button>
             <button type="button" id="TakeImageButton">Take Image</button>
             <button type="button" id="rotateSat"> Rotate CubeSat</button>
+            <button type="button" id="ShowImageButton" style="display: none;">Show Image</button>
         </div>
         <div id="real-time-analytics" class="section">
             <h3>Real-Time Analytics</h3>
@@ -23,7 +24,10 @@
     </div>
     <div id="imageHolder" class="full-width-section">
         <h3>Your Image</h3>
-        <div class="image">Image Placeholder</div>
+        <div class="image">
+            <img id="capturedImage" src="" alt="Captured image" style="display: none; max-width: 100%; height: auto;">
+            <span id="imagePlaceholder">Image Placeholder</span>
+        </div>
     </div>
     <script src="main.js"></script>
 </body>

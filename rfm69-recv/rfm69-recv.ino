@@ -54,8 +54,8 @@ void receive() {
         if (buf[i] < 0x10) Serial.write('0');
         Serial.print(buf[i], HEX);
       }
-      Serial.flush(); // Ensure the data is sent immediately
-      delay(100); // Add a small delay to ensure data is sent correctly
+      Serial.flush();
+      delay(100);
     }
   }
 }

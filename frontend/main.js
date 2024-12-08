@@ -21,15 +21,22 @@ document.getElementById('OpenConnectionButton').addEventListener('click', async 
 
 document.getElementById('TakeImageButton').addEventListener('click', async (event) => {
     event.preventDefault();
+    if (isCollectingImage) return; // Prevent multiple clicks while collecting
 
     if (writer) {
-        // Clear imageData and buffer
         imageData = '';
         buffer = '';
         await sendData('#TIMG');
+        updateTakeImageButton(true);
     } else {
         console.error('Writer is not initialized. Unable to send data.');
     }
+});
+
+document.getElementById('ShowImageButton').remove(); // Remove the button element
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    fetchAndDisplayImage();
 });
 
 async function openSerialConnection() {
@@ -113,8 +120,8 @@ async function listenToPort(reader) {
                 buffer += data;
 
                 // Limit buffer size to 128 characters
-                if (buffer.length > 2048) {
-                    buffer = buffer.slice(-2048);
+                if (buffer.length > 256) {
+                    buffer = buffer.slice(-256);
                 }
 
                 // Hex representation of markers with extra 00 byte
@@ -125,6 +132,7 @@ async function listenToPort(reader) {
                 if (!isCollectingImage && buffer.includes(startMarkerHex)) {
                     console.log('Image start marker found');
                     isCollectingImage = true;
+                    updateTakeImageButton(true);
                     imageData = '';
                     // Remove everything up to and including start marker from buffer
                     buffer = buffer.substring(buffer.indexOf(startMarkerHex) + startMarkerHex.length);
@@ -139,6 +147,8 @@ async function listenToPort(reader) {
                     // Check the last 64 characters of imageData for the end marker
                     if (imageData.slice(-64).includes(endMarkerHex)) {
                         console.log('Image end marker found');
+                        isCollectingImage = false;
+                        updateTakeImageButton(false);
                         // Extract image data up to end marker
                         const imageEndIndex = imageData.indexOf(endMarkerHex);
                         const finalImageData = imageData.substring(0, imageEndIndex);
@@ -174,8 +184,45 @@ async function sendImageToServer(hexData) {
 
         const result = await response.json();
         console.log('Server response:', result);
+
+        if (result.status === 'success') {
+            await fetchAndDisplayImage(); // Automatically fetch and display the image
+        }
     } catch (error) {
         console.error('Error sending image to server:', error);
+    }
+}
+
+async function fetchAndDisplayImage() {
+    try {
+        const response = await fetch('http://localhost:5000/get-image');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        
+        const img = document.getElementById('capturedImage');
+        const placeholder = document.getElementById('imagePlaceholder');
+        
+        img.onload = () => {
+            img.style.display = 'block';
+            placeholder.style.display = 'none';
+            URL.revokeObjectURL(imageUrl); // Clean up the URL object
+        };
+        
+        img.onerror = () => {
+            console.error('Error loading image');
+            placeholder.textContent = 'Error loading image';
+            URL.revokeObjectURL(imageUrl);
+        };
+        
+        img.src = imageUrl;
+    } catch (error) {
+        console.error('Error fetching image:', error);
+        const placeholder = document.getElementById('imagePlaceholder');
+        placeholder.textContent = 'Failed to load image';
     }
 }
 
@@ -189,6 +236,17 @@ function updateConnectionButton() {
         button.textContent = 'Open Connection';
         button.classList.remove('connected');
         button.classList.add('disconnected');
+    }
+}
+
+function updateTakeImageButton(collecting) {
+    const button = document.getElementById('TakeImageButton');
+    if (collecting) {
+        button.textContent = 'Taking Image...';
+        button.classList.add('taking');
+    } else {
+        button.textContent = 'Take Image';
+        button.classList.remove('taking');
     }
 }
 

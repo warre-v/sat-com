@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
@@ -39,7 +39,19 @@ def upload_image():
         # Convert binary data to image
         bin_to_img(BIN_FILE, IMAGE_FILE)
         
+        # Notify the front-end to refresh the image
         return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/get-image', methods=['GET'])
+def get_image():
+    try:
+        image_path = os.path.join(IMAGE_DIR, 'reconstructed_image.jpg')
+        if os.path.exists(image_path):
+            return send_file(image_path, mimetype='image/jpeg')
+        else:
+            return jsonify({"error": "No image available"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
