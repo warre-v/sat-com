@@ -7,6 +7,7 @@ let partialData = '';
 let isCollectingImage = false;
 let imageData = '';
 let buffer = ''; // Buffer to store incoming data
+let delta = 0; // Delta to keep track of buffer length
 
 document.getElementById('OpenConnectionButton').addEventListener('click', async (event) => {
     event.preventDefault();
@@ -17,6 +18,9 @@ document.getElementById('TakeImageButton').addEventListener('click', async (even
     event.preventDefault();
 
     if (writer) {
+        // Clear imageData and buffer
+        imageData = '';
+        buffer = '';
         await sendData('#TIMG');
     } else {
         console.error('Writer is not initialized. Unable to send data.');
@@ -29,9 +33,6 @@ document.getElementById('CloseConnectionButton').addEventListener('click', async
     await closeSerialConnection();
 });
 
-document.getElementById('DownloadDataButton').addEventListener('click', () => {
-    downloadData();
-});
 
 async function openSerialConnection() {
     try {
@@ -111,35 +112,42 @@ async function listenToPort(reader) {
                 // Append data to buffer
                 buffer += data;
 
+                // Limit buffer size to 128 characters
+                if (buffer.length > 128) {
+                    buffer = buffer.slice(-128);
+                }
+
+                // Hex representation of markers with extra 00 byte
+                const startMarkerHex = '23494D475300'; // #IMGS00
+                const endMarkerHex = '23494D474500';   // #IMGE00
+
                 // Check for image start marker
-                if (!isCollectingImage && buffer.includes('#IMGS')) {
+                if (!isCollectingImage && buffer.includes(startMarkerHex)) {
                     console.log('Image start marker found');
                     isCollectingImage = true;
                     imageData = '';
-                    // Remove everything up to and including '#IMGS' from buffer
-                    buffer = buffer.substring(buffer.indexOf('#IMGS') + 5);
-                }
-
-                // Check for image end marker
-                if (isCollectingImage && buffer.includes('#IMGE')) {
-                    console.log('Image end marker found');
-                    // Extract image data up to '#IMGE'
-                    const imageEndIndex = buffer.indexOf('#IMGE');
-                    imageData += buffer.substring(0, imageEndIndex);
-                    // Remove image data and marker from buffer
-                    buffer = buffer.substring(imageEndIndex + 5);
-                    isCollectingImage = false;
-
-                    // Send collected image data to server
-                    await sendImageToServer(imageData);
+                    // Remove everything up to and including start marker from buffer
+                    buffer = buffer.substring(buffer.indexOf(startMarkerHex) + startMarkerHex.length);
                 }
 
                 // Collect image data if in between markers
-                if (isCollectingImage && buffer.length >= 32) {
-                    // Take all data from buffer and add to imageData
-                    console.log('Received:', buffer);
+                if (isCollectingImage) {
                     imageData += buffer;
                     buffer = '';
+
+                    console.log(imageData.slice(-64));
+                    // Check the last 64 characters of imageData for the end marker
+                    if (imageData.slice(-64).includes(endMarkerHex)) {
+                        console.log('Image end marker found');
+                        // Extract image data up to end marker
+                        const imageEndIndex = imageData.indexOf(endMarkerHex);
+                        const finalImageData = imageData.substring(0, imageEndIndex);
+                        isCollectingImage = false;
+                        // Send collected image data to server
+                        await sendImageToServer(finalImageData);
+                        // Clear imageData after sending
+                        imageData = '';
+                    }
                 }
             }
         }
@@ -152,15 +160,16 @@ async function listenToPort(reader) {
 
 async function sendImageToServer(hexData) {
     try {
-        // Convert hex string to binary data
-        const bytes = new Uint8Array(hexData.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        // Clean the hex string - remove any whitespace, newlines etc
+        const cleanHex = hexData.replace(/[\s\n\r]/g, '');
+        console.log('Clean hex data:', cleanHex);
         
         const response = await fetch('http://localhost:5000/upload', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/octet-stream'
             },
-            body: bytes
+            body: cleanHex
         });
 
         const result = await response.json();

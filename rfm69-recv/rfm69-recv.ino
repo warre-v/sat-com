@@ -46,18 +46,19 @@ void setup()
 }
 
 void receive() {
-  if (rf69.available())
-  { 
-    uint8_t buf[32];
+  if (rf69.available()) { 
+    uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-    if (rf69.recv(buf, &len))
-    {      
-      Serial.println((char*)buf);
+    if (rf69.recv(buf, &len)) {      
+      for (uint8_t i = 0; i < len; i++) {
+        if (buf[i] < 0x10) Serial.write('0');
+        Serial.print(buf[i], HEX);
+      }
+      Serial.flush(); // Ensure the data is sent immediately
+      delay(100); // Add a small delay to ensure data is sent correctly
     }
   }
 }
-
-
 
 void sendMarker(const char* marker) {
     if (rf69.send((uint8_t*) marker, strlen(marker))) {
