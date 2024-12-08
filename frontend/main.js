@@ -8,10 +8,15 @@ let isCollectingImage = false;
 let imageData = '';
 let buffer = ''; // Buffer to store incoming data
 let delta = 0; // Delta to keep track of buffer length
+let isConnected = false;
 
 document.getElementById('OpenConnectionButton').addEventListener('click', async (event) => {
     event.preventDefault();
-    await openSerialConnection();
+    if (!isConnected) {
+        await openSerialConnection();
+    } else {
+        await closeSerialConnection();
+    }
 });
 
 document.getElementById('TakeImageButton').addEventListener('click', async (event) => {
@@ -25,11 +30,6 @@ document.getElementById('TakeImageButton').addEventListener('click', async (even
     } else {
         console.error('Writer is not initialized. Unable to send data.');
     }
-});
-
-document.getElementById('CloseConnectionButton').addEventListener('click', async (event) => {
-    event.preventDefault();
-    await closeSerialConnection();
 });
 
 async function openSerialConnection() {
@@ -46,6 +46,9 @@ async function openSerialConnection() {
 
         // Add a short delay to ensure the connection is fully established
         await new Promise(resolve => setTimeout(resolve, 500));
+
+        isConnected = true;
+        updateConnectionButton();
 
     } catch (err) {
         console.error('Failed to open serial connection:', err);
@@ -72,6 +75,9 @@ async function closeSerialConnection() {
             port = null;
 
             console.log('Serial connection closed.');
+
+            isConnected = false;
+            updateConnectionButton();
 
         } catch (err) {
             console.error('Failed to close serial connection:', err);
@@ -170,6 +176,19 @@ async function sendImageToServer(hexData) {
         console.log('Server response:', result);
     } catch (error) {
         console.error('Error sending image to server:', error);
+    }
+}
+
+function updateConnectionButton() {
+    const button = document.getElementById('OpenConnectionButton');
+    if (isConnected) {
+        button.textContent = 'Close Connection';
+        button.classList.remove('disconnected');
+        button.classList.add('connected');
+    } else {
+        button.textContent = 'Open Connection';
+        button.classList.remove('connected');
+        button.classList.add('disconnected');
     }
 }
 

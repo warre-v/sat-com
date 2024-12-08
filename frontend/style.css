@@ -54,6 +54,14 @@ button {
     /* Restricts the maximum width of the buttons */
 }
 
+button.connected {
+    background-color: #ee4444;
+}
+
+button.disconnected {
+    background-color: #44bb44;
+}
+
 button:hover {
     background-color: #0056b3;
 }
