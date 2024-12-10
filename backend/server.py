@@ -71,7 +71,9 @@ def bin_to_img(bin_file_path, output_image_path):
         # Validate data length matches image dimensions
         expected_size = image_width * image_height
         if len(binarr) != expected_size:
-            raise ValueError(f"Binary data size {len(binarr)} does not match expected image size {expected_size}.")
+            print(f"Binary data size {len(binarr)} does not match expected image size {expected_size}. Adding green line.")
+            # Add green line (value 0 for grayscale) to fill the remaining space
+            binarr = np.pad(binarr, (0, expected_size - len(binarr)), 'constant', constant_values=0)
 
         # Reshape the array to match the original image dimensions
         img = binarr.reshape((image_height, image_width))
