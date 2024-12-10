@@ -250,3 +250,77 @@ function updateTakeImageButton(collecting) {
     }
 }
 
+// Set up the chart data and configuration
+let ctx = document.getElementById('realTimeGraph').getContext('2d');
+let realTimeGraph = new Chart(ctx, {
+    type: 'line',  // Line chart type
+    data: {
+        labels: [], // Time or other metrics labels
+        datasets: [{
+            label: 'Rotational Speed',
+            data: [],  // Rotational speed data points
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                type: 'linear',
+                position: 'bottom',
+                title: {
+                    display: true,
+                    text: 'Time (s)'
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Rotational Speed (rad/s)'
+                }
+            }
+        }
+    }
+});
+
+// Example of how to update the graph with real-time data
+function updateGraph(newTime, newSpeed) {
+    // Push new data to the graph
+    realTimeGraph.data.labels.push(newTime);  // Update with current time or metric
+    realTimeGraph.data.datasets[0].data.push(newSpeed);  // Update with current rotational speed
+
+    // If the dataset exceeds a limit (e.g., 100 points), remove the oldest data point
+    if (realTimeGraph.data.labels.length > 100) {
+        realTimeGraph.data.labels.shift();
+        realTimeGraph.data.datasets[0].data.shift();
+    }
+
+    // Update the chart with new data
+    realTimeGraph.update();
+}
+
+// Simulate updating the graph with random data every 1 second
+let time = 0;
+setInterval(() => {
+    let randomSpeed = (Math.random() * 2).toFixed(2);  // Simulating rotational speed data
+    updateGraph(time++, randomSpeed);
+}, 1000);  // Update every second
+
+// Function to rotate CubeSat image based on incoming data
+function rotateCubeSat(rotationAngle) {
+    const cubesatImage = document.getElementById('cubesat-2d-image');
+
+    // Apply CSS transform to rotate the CubeSat image
+    cubesatImage.style.transform = `rotate(${rotationAngle}deg)`;
+}
+
+// Example: Simulate receiving new rotation data every 2 seconds
+let currentAngle = 0;
+setInterval(() => {
+    // Simulate incoming rotational angle (can be replaced with actual data)
+    currentAngle = (currentAngle + 15) % 360;  // Increase by 15 degrees, loop back to 0 after 360
+    rotateCubeSat(currentAngle);
+}, 2000);  // Update every 2 seconds
+

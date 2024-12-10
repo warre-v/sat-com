@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
     <title>Satellite Ground Control Station</title>
 </head>
+
 <body onload="console.log('Page loaded');">
     <h1 id="main_heading">CubeSats - Small Satellites, Big Potential</h1>
-    
+
     <div class="container">
         <div id="actions" class="section">
             <h3>Actions</h3>
@@ -17,16 +20,35 @@
             <button type="button" id="rotateSat"> Rotate CubeSat</button>
             <button type="button" id="ShowImageButton" style="display: none;">Show Image</button>
         </div>
-        <div id="real-time-analytics" class="section">
-            <h3>Real-Time Analytics</h3>
-            <div class="graph">Graph Placeholder</div>
+        <div id="cubesat-orientation" class="section">
+            <h3>Metrics & Orientation</h3>
+            <div class="orientation-container">
+                <!-- Metrics Section -->
+                <div class="metrics">
+                    <p><strong>Rotational Speed:</strong> <span id="rotSpeed">0</span> rad/s</p>
+                    <p><strong>Rotational Acceleration:</strong> <span id="rotAccel">0</span> rad/s²</p>
+                    <p><strong>Position:</strong> <span id="position">(0, 0, 0)</span></p>
+                </div>
+                <!-- Orientation Image Section -->
+                <div class="orientation-image">
+                    <img src="graphics/transparent_2D_cubesat.png" id="cubesat-2d-image">
+                </div>
+            </div>
         </div>
     </div>
-    <div id="imageHolder" class="full-width-section">
-        <h3>Your Image</h3>
-        <div class="image">
-            <img id="capturedImage" src="" alt="Captured image" style="display: none; max-width: 100%; height: auto;">
-            <span id="imagePlaceholder">Image Placeholder</span>
+    <div class="bottom-container">
+        <div id="imageHolder" class="half-width-section">
+            <h3>Your Image</h3>
+            <div class="image">
+                <img id="capturedImage" src="" alt="Captured image"
+                    style="display: none; max-width: 100%; height: auto;">
+                <span id="imagePlaceholder">Image Placeholder</span>
+            </div>
+        </div>
+        <div id="real-time-analytics" class="half-width-section">
+            <h3>Real-Time Analytics</h3>
+            <!-- Graph placeholder -->
+            <canvas id="realTimeGraph" class="graph"></canvas>
         </div>
     </div>
     <script src="main.js"></script>
