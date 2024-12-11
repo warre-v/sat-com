@@ -107,6 +107,29 @@ async function sendData(data) {
     }
 }
 
+function updateSensorData(data) {
+    const values = data.split(',');
+    if (values[0] === '#DATA' && values.length === 11) {
+        // Update position (magnetometer)
+        document.getElementById('position').textContent = 
+            `(${values[1]}, ${values[2]}, ${values[3]})`;
+        
+        // Update azimuth
+        document.getElementById('azimuth').textContent = values[4];
+        
+        // Update angular acceleration
+        document.getElementById('angularAcc').textContent = 
+            `(${values[5]}, ${values[6]}, ${values[7]})`;
+        
+        // Update angular velocity
+        document.getElementById('angularVel').textContent = 
+            `(${values[8]}, ${values[9]}, ${values[10]})`;
+        
+        // Update CubeSat rotation based on azimuth
+        rotateCubeSat(parseInt(values[4]));
+    }
+}
+
 async function listenToPort(reader) {
     let partialLine = '';
     
@@ -118,9 +141,7 @@ async function listenToPort(reader) {
             const textDecoder = new TextDecoder();
             const text = textDecoder.decode(value);
             
-            // Combine with any previous partial line and split on newlines
             const lines = (partialLine + text).split(/\r?\n/);
-            // Save the last partial line for next time
             partialLine = lines.pop() || '';
             
             for (const line of lines) {
@@ -129,7 +150,10 @@ async function listenToPort(reader) {
                 
                 console.log('Serial received:', trimmedLine);
                 
-                if (trimmedLine === '#IMGS') {
+                if (trimmedLine.startsWith('#DATA')) {
+                    updateSensorData(trimmedLine);
+                }
+                else if (trimmedLine === '#IMGS') {
                     console.log('Image start marker found');
                     isCollectingImage = true;
                     updateTakeImageButton(true);
@@ -288,13 +312,6 @@ function updateGraph(newTime, newSpeed) {
     realTimeGraph.update();
 }
 
-// Simulate updating the graph with random data every 1 second
-let time = 0;
-setInterval(() => {
-    let randomSpeed = (Math.random() * 2).toFixed(2);  // Simulating rotational speed data
-    updateGraph(time++, randomSpeed);
-}, 1000);  // Update every second
-
 // Function to rotate CubeSat image based on incoming data
 function rotateCubeSat(rotationAngle) {
     const cubesatImage = document.getElementById('cubesat-2d-image');
@@ -302,12 +319,4 @@ function rotateCubeSat(rotationAngle) {
     // Apply CSS transform to rotate the CubeSat image
     cubesatImage.style.transform = `rotate(${rotationAngle}deg)`;
 }
-
-// Example: Simulate receiving new rotation data every 2 seconds
-let currentAngle = 0;
-setInterval(() => {
-    // Simulate incoming rotational angle (can be replaced with actual data)
-    currentAngle = (currentAngle + 15) % 360;  // Increase by 15 degrees, loop back to 0 after 360
-    rotateCubeSat(currentAngle);
-}, 2000);  // Update every 2 seconds
 
