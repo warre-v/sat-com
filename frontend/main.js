@@ -108,63 +108,50 @@ async function sendData(data) {
 }
 
 async function listenToPort(reader) {
+    let partialLine = '';
+    
     try {
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-
-            if (value) {
-                const data = new TextDecoder().decode(value);
-
-                // Append data to buffer
-                buffer += data;
-
-                // Limit buffer size to 128 characters
-                if (buffer.length > 256) {
-                    buffer = buffer.slice(-256);
-                }
-
-                // Hex representation of markers with extra 00 byte
-                const startMarkerHex = '23494D475300'; // #IMGS00
-                const endMarkerHex = '23494D474500';   // #IMGE00
-
-                // Check for image start marker
-                if (!isCollectingImage && buffer.includes(startMarkerHex)) {
+            
+            const textDecoder = new TextDecoder();
+            const text = textDecoder.decode(value);
+            
+            // Combine with any previous partial line and split on newlines
+            const lines = (partialLine + text).split(/\r?\n/);
+            // Save the last partial line for next time
+            partialLine = lines.pop() || '';
+            
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+                
+                console.log('Serial received:', trimmedLine);
+                
+                if (trimmedLine === '#IMGS') {
                     console.log('Image start marker found');
                     isCollectingImage = true;
                     updateTakeImageButton(true);
                     imageData = '';
-                    // Remove everything up to and including start marker from buffer
-                    buffer = buffer.substring(buffer.indexOf(startMarkerHex) + startMarkerHex.length);
+                } 
+                else if (trimmedLine === '#IMGE') {
+                    console.log('Image end marker found');
+                    isCollectingImage = false;
+                    updateTakeImageButton(false);
+                    await sendImageToServer(imageData);
+                    imageData = '';
                 }
-
-                // Collect image data if in between markers
-                if (isCollectingImage) {
-                    imageData += buffer;
-                    buffer = '';
-
-                    console.log(imageData.slice(-64));
-                    // Check the last 64 characters of imageData for the end marker
-                    if (imageData.slice(-64).includes(endMarkerHex)) {
-                        console.log('Image end marker found');
-                        isCollectingImage = false;
-                        updateTakeImageButton(false);
-                        // Extract image data up to end marker
-                        const imageEndIndex = imageData.indexOf(endMarkerHex);
-                        const finalImageData = imageData.substring(0, imageEndIndex);
-                        isCollectingImage = false;
-                        // Send collected image data to server
-                        await sendImageToServer(finalImageData);
-                        // Clear imageData after sending
-                        imageData = '';
+                else if (isCollectingImage && !trimmedLine.includes('#')) {
+                    const hexLine = trimmedLine.replace(/\s+/g, '');
+                    if (hexLine.length === 64) {
+                        imageData += hexLine;
                     }
                 }
             }
         }
     } catch (error) {
         console.error('Error reading from port:', error);
-    } finally {
-        reader.releaseLock();
     }
 }
 

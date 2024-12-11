@@ -45,17 +45,44 @@ void setup()
     Serial.begin(9600);
 }
 
+bool inImageMode = false;
+
 void receive() {
   if (rf69.available()) { 
     uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-    if (rf69.recv(buf, &len)) {      
-      for (uint8_t i = 0; i < len; i++) {
-        if (buf[i] < 0x10) Serial.write('0');
-        Serial.print(buf[i], HEX);
+    if (rf69.recv(buf, &len)) {
+      // Convert received data to String for marker checking
+      String receivedStr = String((char*)buf);
+      receivedStr = receivedStr.substring(0, len);
+      
+      // Check for start marker
+      if (receivedStr.indexOf("#IMGS") != -1) {
+        inImageMode = true;
+        Serial.println(receivedStr); // Print the marker as chars
+        return;
       }
-      Serial.flush();
-      delay(100);
+      
+      // Check for end marker
+      if (receivedStr.indexOf("#IMGE") != -1) {
+        inImageMode = false;
+        Serial.println(receivedStr); // Print the marker as chars
+        return;
+      }
+      
+      // Print data based on mode
+      if (inImageMode) {
+        // Print as hex during image transmission
+        for (uint8_t i = 0; i < len; i++) {
+          if (buf[i] < 0x10) Serial.write('0');
+          Serial.print(buf[i], HEX);
+        }
+        Serial.println();
+      } else {
+        // Print as chars for normal operation
+        Serial.write(buf, len);
+        Serial.println();
+      }
     }
   }
 }
