@@ -119,11 +119,11 @@ function updateSensorData(data) {
         
         // Update angular acceleration
         document.getElementById('angularAcc').textContent = 
-            `(${values[5]}, ${values[6]}, ${values[7]})`;
+            `(${parseFloat(values[5])/100}, ${parseFloat(values[6]) / 100}, ${parseFloat(values[7]) / 100})`;
         
         // Update angular velocity
         document.getElementById('angularVel').textContent = 
-            `(${values[8]}, ${values[9]}, ${values[10]})`;
+            `(${parseFloat(values[8]) / 100}, ${parseFloat(values[9]) / 100}, ${parseFloat(values[10]) / 100})`;
         
         // Update CubeSat rotation based on azimuth
         rotateCubeSat(parseInt(values[4]));
@@ -268,7 +268,7 @@ let realTimeGraph = new Chart(ctx, {
     data: {
         labels: [], // Time or other metrics labels
         datasets: [{
-            label: 'Rotational Speed',
+            label: 'Angular Velocity',
             data: [],  // Rotational speed data points
             borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -289,7 +289,7 @@ let realTimeGraph = new Chart(ctx, {
             y: {
                 title: {
                     display: true,
-                    text: 'Rotational Speed (rad/s)'
+                    text: 'Angular Velocity (rad/s)'
                 }
             }
         }

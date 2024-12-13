@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon"  type="image/x-icon" href="graphics\transparent_2D_cubesat.png">
+    <link rel="icon" type="image/x-icon" href="graphics\transparent_2D_cubesat.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
     <title>Satellite Ground Control Station</title>
 </head>
@@ -20,6 +20,9 @@
             <button type="button" id="TakeImageButton">Take Image</button>
             <button type="button" id="rotateSat"> Rotate CubeSat</button>
             <button type="button" id="ShowImageButton" style="display: none;">Show Image</button>
+            <div class="input-group">
+                <input type="number" id="azimuthInput" placeholder="Enter azimuth value">
+            </div>
         </div>
         <div id="cubesat-orientation" class="section">
             <h3>Metrics & Orientation</h3>
