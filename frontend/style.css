@@ -159,25 +159,33 @@ button:hover {
     text-align: center;
 }
 
-.image {
-    width: 100%;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: auto;
-    max-width: auto;
-    background-color: #f4f4f4;
-    color: #666;
-    margin-top: 20px;
-}
-
 #capturedImage {
     max-width: 100%;
+    /* Make the image responsive */
+    max-height: 300px;
+    /* Limit the height */
+    width: auto;
+    /* Maintain aspect ratio */
     height: auto;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin: 10px 0;
+    /* Maintain aspect ratio */
+    object-fit: contain;
+    /* Ensures the image fits within the container */
+    display: none;
+    /* Initially hidden */
+}
+
+#imageHolder .image {
+    width: 100%;
+    /* Allow the container to scale */
+    height: 300px;
+    /* Set a fixed height for the image container */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Optional: for better visibility of the container */
+    background-color: #f9f9f9;
+    /* Optional: a neutral background for the image section */
 }
 
 /* Ensure input is still usable */
