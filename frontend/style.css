@@ -180,27 +180,45 @@ button:hover {
     margin: 10px 0;
 }
 
- #azimuthInput {
-     width: 200px;
-     padding: 10px;
-     font-size: 16px;
-     box-sizing: border-box;
-     border: 1px solid #ccc;
-     border-radius: 4px;
- }
+/* Ensure input is still usable */
+#XInput::-webkit-inner-spin-button,
+#XInput::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
- /* Ensure input is still usable */
- #azimuthInput::-webkit-inner-spin-button,
- #azimuthInput::-webkit-outer-spin-button {
-     -webkit-appearance: none;
-     /* Remove arrows on WebKit browsers */
-     margin: 0;
- }
+#YInput::-webkit-inner-spin-button,
+#YInput::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
- button {
-     width: 200px;
- }
+#ZInput::-webkit-inner-spin-button,
+#ZInput::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
 
- .input-group {
-     display: inline-block;
- }
+.section {
+    margin-bottom: 1rem;
+}
+
+button {
+    width: 200px; /* Adjust as needed */
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 0.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-group input {
+    width: 200px; /* Matches button width */
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
